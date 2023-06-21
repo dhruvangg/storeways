@@ -6,29 +6,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Storeways</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="leaflet/leaflet.css">
+    <link rel="stylesheet" href="assets/leaflet/leaflet.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
-        #map {
-            height: 500px;
+        /* .sw-main-container {
+            display: flex;
+            height: 600px;
+        }
+
+        .sw-store-map {
+            height: 600px;
             width: 100%;
+        }
+
+        .sw-store-list {
+            height: 600px;
+            overflow-y: scroll;
+            width: 25%;
+        } */
+
+        .sw-store-list>ul>li {
+            padding: 10px;
+            border-top: 1px solid #e2e2e2;
+            cursor: pointer;
+            box-shadow: none;
+            transition: all ease 300ms;
+        }
+
+        .sw-store-list>ul>li:hover {
+            background-color: #f6f6f6;
+            box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px;
+        }
+
+        .sw-store-list::-webkit-scrollbar-track {
+            background-color: #F5F5F5;
+        }
+
+        .sw-store-list::-webkit-scrollbar {
+            width: 10px;
+            background-color: #F5F5F5;
+        }
+
+        .sw-store-list::-webkit-scrollbar-thumb {
+            background-color: #000000;
         }
     </style>
 </head>
 
 <body>
-    <header class="flex justify-center">
+    <a href="https://github.com/dhruvangg/storeways" class="fixed top-0 right-0"><img decoding="async" loading="lazy" width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_darkblue_121621.png?resize=149%2C149" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1"></a>
+    <header class="flex justify-center items-center mb-8">
         <div class="w-36">
-            <img src="storeways.png" alt="">
+            <img src="assets/storeways.png" alt="">
+        </div>
+        <div>
+            <h1 class="text-5xl font-semibold mb-3">Store Locator</h1>
+            <h3 class="text-2xl font-semibold">Leaflet and OpenStreetMap</h3>
         </div>
     </header>
-    <main>
-        <div id="map"></div>
-    </main>
-    <script src="leaflet/leaflet.js"></script>
-    <script src="storeways.js"></script>
+    <div class="container mx-auto">
+        <main class="sw-main-container grid grid-cols-5 shadow-xl">
+            <div class="sw-store-map col-span-4 h-[600px]" id="map"></div>
+            <div class="sw-store-list col-span-1 h-[600px] overflow-y-auto"></div>
+        </main>
+    </div>
+    <script id="SWList" type="text/x-handlebars-template">
+        <div class="list-content">
+            <div class="loc-name">{{name}}</div>
+            <div class="loc-addr">{{address}}</div>
+            {{#if address2}}
+                <div class="loc-addr2">{{address2}}</div>
+            {{/if}}
+            <div class="loc-addr3">{{city}}{{#if city}},{{/if}} {{state}} {{postal}}</div>
+            {{#if phone}}
+                <div class="loc-phone">{{phone}}</div>
+            {{/if}}
+            {{#if web}}
+                <div class="loc-web"><a href="{{web}}" target="_blank">{{web}}</a></div>
+            {{/if}}
+            {{#if distance}}
+                <div class="loc-dist loc-default-dist">{{distance}} {{length}}</div>
+                {{#if altdistance}}<div class="loc-dist loc-alt-dist">{{altdistance}} {{altlength}}</div>{{/if}}
+                <div class="loc-directions"><a href="https://maps.google.com/maps?saddr={{origin}}&amp;daddr={{address}} {{address2}} {{city}}, {{state}} {{postal}}" target="_blank">Directions</a></div>
+            {{/if}}
+        </div>
+    </script>
+
+    <script id="SWPopup" type="text/x-handlebars-template">
+        <div class="loc-name">{{name}}</div>
+        <div>{{address}}</div>
+        {{#if address2}}
+            <div>{{address2}}</div>
+        {{/if}}
+        <div>{{city}}{{#if city}},{{/if}} {{state}} {{postal}}</div>
+        {{#if hours1}}
+            <div>{{hours1}}</div>
+        {{/if}}
+        {{#if hours2}}
+            <div>{{hours2}}</div>
+        {{/if}}
+        {{#if hours3}}
+            <div>{{hours3}}</div>
+        {{/if}}
+        {{#if phone}}
+            <div>{{phone}}</div>
+        {{/if}}
+        <div><a href="{{web}}" target="_blank">{{web}}</a></div>
+    </script>
+
+    <script src="assets/handlebars.min.js"></script>
+    <script src="assets/leaflet/leaflet.js"></script>
+    <script src="assets/storeways.js"></script>
     <script>
-        const storeways = new StoreWays({ color: 'blue', dataUrl: './bewdata.json', mapID: 'map' });
+        const storeways = new StoreWays({
+            storeDataUrl: './assets/data.json',
+            mapID: 'map',
+            listTemplate: 'SWList',
+            popupTemplate: 'SWPopup',
+            defaultLoc: true,
+            defaultlat: 23.0053315,
+            defaultlng: 72.6156623
+        });
         storeways.init();
     </script>
 </body>
