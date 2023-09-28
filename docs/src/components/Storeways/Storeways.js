@@ -1,5 +1,8 @@
-class StoreWays {
-    #map; #markers = []
+import Handlebars from 'handlebars'
+import * as L from 'leaflet'
+
+export default class StoreWays {
+    #map; #mapLayer; #markers = []
     constructor(settings = {}) {
         const defaultSettings = {
             defaultlat: 38.947464,
@@ -8,50 +11,56 @@ class StoreWays {
             milesLang: 'miles',
             kilometerLang: 'kilometers',
             mapID: 'swMap',
-            storeListWrapper: 'sw-store-list',
-        };
+            storeListWrapper: 'sw-store-list'
+        }
 
         this.settings = { ...defaultSettings, ...settings };
+
         this.GeoCodeCalc = {};
         this.validateOptions();
         this.popuptemplate = Handlebars.compile(document.getElementById(this.settings.popupTemplate).innerHTML);
+
+        this.init()
     }
 
     async init() {
-        const { lengthUnit, storeData, storeDataUrl } = this.settings
-        this.GeoCodeCalc.EarthRadius = lengthUnit === 'km' ? 6367 : 3956  // Calculate geocode distance functions
-        if (!storeData) {
-            await this.getStoreData(storeDataUrl); // load data from json 
-        }
-        this.defineDistance()
-        this.sortBy('distance')
-        this.renderMap()
-        this.renderList()
+        const { storeData, lengthUnit } = this.settings
+        this.GeoCodeCalc.EarthRadius = lengthUnit === 'km' ? 6367 : 3956
+        this.defineDistance(storeData)
+        this.sortBy(storeData, 'distance')
+        this.renderMap(storeData)
+        this.renderList(storeData)
     }
 
-    async getStoreData(url) {
-        try {
-            const response = await fetch(url)
-            const data = await response.json()
-            this.settings.storeData = data
-        } catch (error) {
-            console.log(error)
+    updateData(newData) {
+        this.settings.storeData = newData;
+        if (this.#map !== undefined && this.#map !== null) {
+            this.#map.remove();
         }
+        this.init()
     }
 
-    renderMap() {
-        const { storeData, defaultlat, defaultlng, mapID } = this.settings
+    renderMap(storeData) {
+        const { defaultlat, defaultlng, mapID } = this.settings
         this.#map = L.map(mapID).setView([defaultlat, defaultlng], 3)
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(this.#map);
+        this.#mapLayer = L.layerGroup().addTo(this.#map);
+        this.#mapLayer.clearLayers();
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(this.#map);
+
         storeData.forEach((el, i) => {
             const { lat, lng } = el
-            this.#markers[i] = L.marker([lat, lng]).bindPopup(this.popuptemplate(el)).addTo(this.#map);
+            L.marker([lat, lng]).bindPopup(this.popuptemplate(el)).addTo(this.#mapLayer);
         })
+        this.#map.addLayer(this.#mapLayer);
         this.#map.fitBounds(storeData.map(el => [el.lat, el.lng]));
     }
 
-    renderList() {
-        const { storeData, storeListWrapper, listTemplate } = this.settings
+    renderList(storeData) {
+        const { storeListWrapper, listTemplate } = this.settings
         const source = document.getElementById(listTemplate).innerHTML;
         const template = Handlebars.compile(source);
         const list = document.createElement('ul')
@@ -77,11 +86,12 @@ class StoreWays {
         })
         items.forEach(el => list.appendChild(el))
         const container = document.getElementsByClassName(storeListWrapper)[0]
+        container.innerHTML = '';
         container.appendChild(list)
     }
 
-    defineDistance() {
-        const { storeData, defaultlat, defaultlng } = this.settings
+    defineDistance(storeData) {
+        const { defaultlat, defaultlng } = this.settings
         storeData.forEach(el => {
             const { lat, lng } = el
             const _distance = this.geoCodeCalcCalcDistance(defaultlat, defaultlng, lat, lng, this.GeoCodeCalc.EarthRadius);
@@ -98,8 +108,7 @@ class StoreWays {
         })
     }
 
-    sortBy(property) {
-        const { storeData } = this.settings
+    sortBy(storeData, property) {
         storeData.sort((a, b) => (a[property] < b[property]) ? -1 : ((a[property] > b[property]) ? 1 : 0))
     }
 
@@ -114,8 +123,14 @@ class StoreWays {
     }
 
     validateOptions() {
-        if (!window.L) throw Error("LeafletJS is required.");
-        if (!window.Handlebars) throw Error("Handlebars is required.");
+        if (import.meta.hot) {
+            // Check if moduleB has been imported
+            if (import.meta.hot.activeExports) {
+                console.log("moduleB has been imported in moduleA.");
+            } else {
+                console.log("moduleB has NOT been imported in moduleA.");
+            }
+        }
         const { settings } = this
         if (settings && !settings.storeData && !settings.storeDataUrl) throw Error("Required data source is missing.");
         if (!settings.listTemplate || !settings.popupTemplate) {
@@ -123,9 +138,3 @@ class StoreWays {
         }
     }
 }
-
-window.StoreWays = StoreWays;
-
-window.MyNamespace = {
-    Plugin: StoreWays
-};
