@@ -62,7 +62,11 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       // Replace with your project's social card
-      image: 'img/docusaurus-social-card.jpg',
+      headTags: [
+        
+      ],
+      metadata: [{name: 'keywords', content: 'Storelocator, JavaScript Storelocator, jquery Storelocator'}],
+      image: 'img/storeways.png',
       navbar: {
         title: 'Storeways',
         logo: {
