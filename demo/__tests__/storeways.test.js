@@ -2,12 +2,19 @@
 const fs = require('fs');
 const path = require('path');
 
-// Read and evaluate the source file
+// Read and evaluate the source file in global context
 const storewaysSource = fs.readFileSync(
   path.join(__dirname, '../storeways.js'),
   'utf8'
 );
-eval(storewaysSource);
+
+// Make StoreWays available globally
+const StoreWays = eval(`
+  (function() {
+    ${storewaysSource}
+    return StoreWays;
+  })()
+`);
 
 describe('StoreWays', () => {
   let mockStoreData;
@@ -333,9 +340,9 @@ describe('StoreWays', () => {
   describe('Validation', () => {
     test('validateOptions should throw error if Leaflet is missing', () => {
       const originalL = global.L;
-      global.L = undefined;
-
       const storeways = new StoreWays(defaultSettings);
+      
+      global.L = undefined;
       
       expect(() => {
         storeways.validateOptions();
@@ -346,9 +353,9 @@ describe('StoreWays', () => {
 
     test('validateOptions should throw error if Handlebars is missing', () => {
       const originalHandlebars = global.Handlebars;
-      global.Handlebars = undefined;
-
       const storeways = new StoreWays(defaultSettings);
+      
+      global.Handlebars = undefined;
       
       expect(() => {
         storeways.validateOptions();
